@@ -1,0 +1,62 @@
+{
+  "mumbai": {
+    "elevation_m": 6.0,
+    "slope_percent": 0.292,
+    "basin_score": 0.625,
+    "elevation_risk_score": 0.8428,
+    "flood_zone": "CRITICAL",
+    "elevation_diff": 14.6,
+    "distance_to_river_km": 99.0,
+    "river_count_10km": 0,
+    "river_density_per_km2": 0.0,
+    "river_risk_score": 0.0
+  },
+  "delhi": {
+    "elevation_m": 222.0,
+    "slope_percent": -0.075,
+    "basin_score": 0.125,
+    "elevation_risk_score": 0.3836,
+    "flood_zone": "LOW",
+    "elevation_diff": -3.8,
+    "distance_to_river_km": 99.0,
+    "river_count_10km": 0,
+    "river_density_per_km2": 0.0,
+    "river_risk_score": 0.0
+  },
+  "chennai": {
+    "elevation_m": 12.0,
+    "slope_percent": -0.105,
+    "basin_score": 0.25,
+    "elevation_risk_score": 0.6856,
+    "flood_zone": "HIGH",
+    "elevation_diff": -5.2,
+    "distance_to_river_km": 99.0,
+    "river_count_10km": 0,
+    "river_density_per_km2": 0.0,
+    "river_risk_score": 0.0
+  },
+  "kolkata": {
+    "elevation_m": 12.0,
+    "slope_percent": -0.1,
+    "basin_score": 0.0,
+    "elevation_risk_score": 0.5856,
+    "flood_zone": "HIGH",
+    "elevation_diff": -5.0,
+    "distance_to_river_km": 99.0,
+    "river_count_10km": 0,
+    "river_density_per_km2": 0.0,
+    "river_risk_score": 0.0
+  },
+  "bengaluru": {
+    "elevation_m": 910.0,
+    "slope_percent": -0.242,
+    "basin_score": 0.25,
+    "elevation_risk_score": 0.1,
+    "flood_zone": "LOW",
+    "elevation_diff": -12.1,
+    "distance_to_river_km": 99.0,
+    "river_count_10km": 0,
+    "river_density_per_km2": 0.0,
+    "river_risk_score": 0.0
+  }
+}

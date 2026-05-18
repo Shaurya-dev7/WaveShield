@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # 1. POSTGRESQL + TIMESCALEDB + POSTGIS
+  # ==========================================
+  timescaledb:
+    image: timescale/timescaledb-ha:pg14-latest
+    container_name: disaster_intel_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=disaster_admin_123
+      - POSTGRES_DB=disaster_intel
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb_data:/home/postgres/pgdata/data
+      - ./docker/postgres/init-postgis.sql:/docker-entrypoint-initdb.d/01-init-postgis.sql
+    networks:
+      - disaster_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # 2. FASTAPI BACKEND
+  # ==========================================
+  fastapi:
+    build:
+      context: .
+      dockerfile: docker/fastapi/Dockerfile
+    container_name: disaster_intel_api
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:disaster_admin_123@timescaledb:5432/disaster_intel
+    env_file:
+      - .env
+    volumes:
+      - ./models:/app/models
+      - shared_logs:/app/logs
+    networks:
+      - disaster_network
+    restart: unless-stopped
+
+  # ==========================================
+  # 3. STREAMLIT DASHBOARD
+  # ==========================================
+  dashboard:
+    build:
+      context: .
+      dockerfile: docker/dashboard/Dockerfile
+    container_name: disaster_intel_dashboard
+    depends_on:
+      - fastapi
+    ports:
+      - "8501:8501"
+    environment:
+      - FASTAPI_URL=http://fastapi:8000
+    env_file:
+      - .env
+    networks:
+      - disaster_network
+    restart: unless-stopped
+
+  # ==========================================
+  # 4. BACKGROUND SCHEDULER
+  # ==========================================
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/scheduler/Dockerfile
+    container_name: disaster_intel_scheduler
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://postgres:disaster_admin_123@timescaledb:5432/disaster_intel
+    env_file:
+      - .env
+    volumes:
+      - ./models:/app/models
+      - shared_logs:/app/logs
+    networks:
+      - disaster_network
+    restart: unless-stopped
+
+  # ==========================================
+  # 5. TELEGRAM BOT
+  # ==========================================
+  telegram_bot:
+    build:
+      context: .
+      dockerfile: docker/telegram_bot/Dockerfile
+    container_name: disaster_intel_telegram
+    depends_on:
+      - fastapi
+    environment:
+      - FASTAPI_URL=http://fastapi:8000
+    env_file:
+      - .env
+    volumes:
+      - shared_logs:/app/logs
+    networks:
+      - disaster_network
+    restart: unless-stopped
+
+volumes:
+  timescaledb_data:
+  shared_logs:
+
+networks:
+  disaster_network:
+    driver: bridge

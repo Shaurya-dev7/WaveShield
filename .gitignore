@@ -1,0 +1,43 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Machine Learning Cache
+models/*.pkl
+!models/.keep
+models/*.h5
+models/*.onnx
+
+# Data files (usually you don't commit large datasets)
+data/*.csv
+data/*.zip
+!data/.keep
+
+# VS Code / IDE
+.vscode/
+.idea/
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.log
+tmp/
+temp/
+logs/
+.pytest_cache/

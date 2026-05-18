@@ -1,0 +1,27 @@
+# Environment
+.env
+.venv
+env/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Git
+.git
+.gitignore
+
+# Data & Models (Depending on your strategy, you might want to exclude local data)
+# We will volume-mount models and logs, so we don't build them into the image
+logs/
+data/
+*.csv
+
+# Docker
+docker/
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store

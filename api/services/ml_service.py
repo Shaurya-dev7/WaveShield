@@ -33,6 +33,7 @@ class MLService:
             self.features = self.model.feature_names_in_.tolist()
             self.is_loaded = True
             logger.info("FastAPI: ML Model successfully loaded into RAM.")
+            logger.info(f"Model expects {len(self.features)} features: {self.features}")
         except FileNotFoundError:
             self.model = None
             self.features = []
@@ -42,6 +43,10 @@ class MLService:
     def predict_risk(self, feature_dict: dict) -> tuple[str, float]:
         if not self.is_loaded:
             return "UNKNOWN", 0.0
+            
+        print("=== FEATURES SENT TO MODEL ===")
+        print(feature_dict)
+        print("Total Features:", len(feature_dict))
             
         df = pd.DataFrame([feature_dict])
         

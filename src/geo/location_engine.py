@@ -26,6 +26,7 @@ from src.utils.logger import setup_logger
 logger = setup_logger("Location_Engine")
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+OPENMETEO_GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
 
 # In-memory cache to avoid hammering Nominatim
 _geocode_cache: Dict[str, Dict] = {}
@@ -33,7 +34,8 @@ _geocode_cache: Dict[str, Dict] = {}
 
 def geocode_city(city_name: str, country: str = "") -> Optional[Dict]:
     """
-    Converts a city name to lat/lon coordinates using OpenStreetMap Nominatim.
+    Converts a city name to lat/lon coordinates using Open-Meteo Geocoding
+    with a fallback to OpenStreetMap Nominatim.
 
     Args:
         city_name: Human-readable city name (e.g., "Mumbai", "Tokyo")
@@ -46,6 +48,38 @@ def geocode_city(city_name: str, country: str = "") -> Optional[Dict]:
     if cache_key in _geocode_cache:
         return _geocode_cache[cache_key]
 
+    # --- PRIMARY: Open-Meteo Geocoding ---
+    try:
+        om_params = {
+            "name": city_name,
+            "count": 1,
+            "language": "en",
+            "format": "json"
+        }
+        om_resp = requests.get(OPENMETEO_GEOCODE_URL, params=om_params, timeout=10)
+        om_resp.raise_for_status()
+        om_data = om_resp.json()
+        
+        if "results" in om_data and len(om_data["results"]) > 0:
+            result = om_data["results"][0]
+            # Verify country if provided
+            if not country or country.lower() in result.get("country", "").lower() or country.lower() in result.get("country_code", "").lower():
+                location = {
+                    "city": city_name,
+                    "lat": float(result["latitude"]),
+                    "lon": float(result["longitude"]),
+                    "display_name": f"{result.get('name', city_name)}, {result.get('country', 'Unknown')}",
+                    "country": result.get("country", "Unknown"),
+                    "country_code": result.get("country_code", ""),
+                }
+                _geocode_cache[cache_key] = location
+                logger.info(f"Open-Meteo Geocoded '{city_name}' → ({location['lat']}, {location['lon']})")
+                return location
+    except Exception as e:
+        logger.warning(f"Open-Meteo geocoding failed for '{city_name}': {e}. Falling back to Nominatim.")
+    
+    # --- SECONDARY: Nominatim OpenStreetMap ---
+    logger.info(f"Attempting Nominatim fallback for '{city_name}'")
     query = f"{city_name}, {country}" if country else city_name
 
     params = {
@@ -68,7 +102,7 @@ def geocode_city(city_name: str, country: str = "") -> Optional[Dict]:
         results = response.json()
 
         if not results:
-            logger.warning(f"Geocoding failed: '{city_name}' not found")
+            logger.warning(f"Nominatim Geocoding failed: '{city_name}' not found")
             return None
 
         result = results[0]
@@ -82,11 +116,11 @@ def geocode_city(city_name: str, country: str = "") -> Optional[Dict]:
         }
 
         _geocode_cache[cache_key] = location
-        logger.info(f"Geocoded '{city_name}' → ({location['lat']}, {location['lon']})")
+        logger.info(f"Nominatim Geocoded '{city_name}' → ({location['lat']}, {location['lon']})")
         return location
 
     except requests.exceptions.RequestException as e:
-        logger.error(f"Geocoding request failed: {e}")
+        logger.error(f"Nominatim Geocoding request failed: {e}")
         return None
 
 

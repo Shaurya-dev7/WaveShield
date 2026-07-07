@@ -26,14 +26,33 @@ def generate_training_labels(df: pd.DataFrame) -> pd.DataFrame:
     Generates rule-based flood risk labels to act as the target variable for ML training.
     In a real-world scenario, this column would come from historical flood records.
     """
+    # FOR DEMONSTRATION: Inject synthetic severe and moderate weather events
+    # throughout the dataset to ensure we have a mix of classes in both train and test sets.
+    # We will inject these into approximately 10% of the rows for HIGH, 20% for MEDIUM.
+    np.random.seed(42) # For reproducibility
+    n = len(df)
+    
+    if n > 0:
+        high_risk_indices = np.random.choice(n, max(1, int(n * 0.10)), replace=False)
+        remaining_indices = np.setdiff1d(np.arange(n), high_risk_indices)
+        medium_risk_indices = np.random.choice(remaining_indices, max(1, int(n * 0.20)), replace=False)
+        
+        # Modify features to trigger the heuristics
+        if 'rain' in df.columns and 'soil_moisture_0_to_1cm' in df.columns:
+            df.loc[high_risk_indices, 'rain'] = np.random.uniform(55.0, 100.0, len(high_risk_indices))
+            df.loc[high_risk_indices, 'soil_moisture_0_to_1cm'] = np.random.uniform(0.6, 1.0, len(high_risk_indices))
+            
+            df.loc[medium_risk_indices, 'rain'] = np.random.uniform(26.0, 49.0, len(medium_risk_indices))
+            df.loc[medium_risk_indices, 'soil_moisture_0_to_1cm'] = np.random.uniform(0.1, 0.4, len(medium_risk_indices))
+
     def heuristic_labeler(row):
         score = 0
-        if row['rain'] > 50.0:
+        if row.get('rain', 0) > 50.0:
             score += 3
-        elif row['rain'] > 25.0:
+        elif row.get('rain', 0) > 25.0:
             score += 1
             
-        if row['soil_moisture_0_to_1cm'] > 0.5:
+        if row.get('soil_moisture_0_to_1cm', 0) > 0.5:
             score += 1
             
         if score >= 3:
@@ -45,14 +64,6 @@ def generate_training_labels(df: pd.DataFrame) -> pd.DataFrame:
             
     df['risk_level'] = df.apply(heuristic_labeler, axis=1)
     
-    # FOR DEMONSTRATION: Ensure at least one instance of each class exists 
-    # to prevent XGBoost from crashing on small, calm weather datasets.
-    # We artificially inject a severe storm into the first row, and moderate rain into the second.
-    if len(df) > 2:
-        df.loc[0, 'risk_level'] = "HIGH"
-        df.loc[1, 'risk_level'] = "MEDIUM"
-        df.loc[2, 'risk_level'] = "LOW"
-        
     return df
 
 def prepare_features_and_target(df: pd.DataFrame, models_dir: Path):

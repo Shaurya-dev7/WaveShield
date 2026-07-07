@@ -21,6 +21,9 @@ class PredictionResponse(BaseModel):
     confidence: float
     timestamp: str
     weather: WeatherMetrics
+    model_version: str
+    prediction_timestamp: str
+    data_source: str
 
 class AlertResponse(BaseModel):
     city: str

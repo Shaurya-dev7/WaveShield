@@ -3,13 +3,15 @@ from typing import List
 from api.schemas.responses import PredictionResponse, WeatherMetrics
 from api.services.ml_service import ml_engine
 from api.services.data_service import DataService
+from datetime import datetime, timezone
 
 router = APIRouter(prefix="/predict", tags=["Predictions"])
 
 @router.get("/{city}", response_model=PredictionResponse)
 async def predict_city(city: str):
     """
-    Generate an AI prediction for a specific city using the latest weather data.
+    Generate an AI prediction for a specific city's current flood risk based on the latest weather data.
+    Note: This is an MVP assessing current conditions, not a forward-looking 24h/48h forecast.
     """
     feature_dict = DataService.get_latest_features(city)
     if not feature_dict:
@@ -31,13 +33,17 @@ async def predict_city(city: str):
         risk_level=risk_level,
         confidence=confidence,
         timestamp=feature_dict.get("timestamp", "Unknown"),
-        weather=weather
+        weather=weather,
+        model_version="flood_xgboost_v1",
+        prediction_timestamp=datetime.now(timezone.utc).isoformat(),
+        data_source="Open-Meteo"
     )
 
 @router.get("-all", response_model=List[PredictionResponse])
 async def predict_all():
     """
-    Batch predict flood risks for all tracked cities.
+    Batch predict current flood risks for all tracked cities.
+    Note: This is an MVP assessing current conditions, not a forward-looking forecast.
     Highly optimized for production dashboards.
     """
     latest_rows = DataService.get_all_latest_features()
@@ -62,7 +68,10 @@ async def predict_all():
             risk_level=risk_level,
             confidence=confidence,
             timestamp=feature_dict.get("timestamp", "Unknown"),
-            weather=weather
+            weather=weather,
+            model_version="flood_xgboost_v1",
+            prediction_timestamp=datetime.now(timezone.utc).isoformat(),
+            data_source="Open-Meteo"
         ))
         
     return predictions

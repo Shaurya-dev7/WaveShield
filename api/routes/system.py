@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from typing import List
 from datetime import datetime
 import time
@@ -8,6 +8,20 @@ from api.services.ml_service import ml_engine
 from api.services.data_service import DataService
 
 router = APIRouter(tags=["System & Monitoring"])
+
+@router.get("/api/debug/features")
+async def get_debug_features(city: str):
+    """
+    Debug endpoint to view the exact raw features fetched for a specific city 
+    before they are fed into the XGBoost model.
+    """
+    feature_dict = DataService.get_latest_features(city)
+    if not feature_dict:
+        raise HTTPException(status_code=404, detail=f"No data found for city: {city}")
+    
+    # For Decimals and Timestamps to be JSON serializable, 
+    # FastAPI usually handles them automatically, but we can return dict directly
+    return feature_dict
 
 # Store the start time to calculate uptime
 START_TIME = time.time()
